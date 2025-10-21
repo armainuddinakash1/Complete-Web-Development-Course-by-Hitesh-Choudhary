@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forms</title>
+
+</head>
+<body>
+    <h1>HTML Forms</h1>
+    <form action="/submit" method="post">
+        <label for="name" >Name:</label>
+        <input type="text" id="name" name="name" placeholder="Enter your name" required><br><br>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email"  required><br><br>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required><br><br>
+
+        <label for="comment">Comment:</label>
+        <textarea id="comment" name="comment" rows="4" cols="30" placeholder="Enter your comment"></textarea><br><br>
+
+        <input type="checkbox" id="apple" name="fruits" value="apple">
+        <label for="apple">Apple</label><br>
+
+        <input type="checkbox" id="banana" name="fruits" value="banana">
+        <label for="banana">Banana</label><br>
+
+        <input type="checkbox" id="mango" name="fruits" value="mango">
+        <label for="mango">Mango</label><br>
+
+        <input type="radio" id="male" name="gender" value="male">
+        <label for="male">Male</label><br>
+
+        <input type="radio" id="female" name="gender" value="female">
+        <label for="female">Female</label><br>
+
+        <input type="radio" id="other" name="gender" value="other">
+        <label for="other">Other</label><br>
+
+        <input type="reset" value="Reset">
+        <input type="submit" value="Login">
+    </form>
+    
+</body>
+</html>
