@@ -4,104 +4,107 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>SignUp Page</title>
-    </head>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #0c761e;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .card {
-            background-color: #49ce60;
-            padding: 50px 50px 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #0c761e;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+            }
+            .card {
+                background-color: #49ce60;
+                padding: 50px 50px 30px;
+                border-radius: 15px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
 
-            width: 600px;
-        }
-        h1 {
-            color: #fff;
-            margin-bottom: 25px;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-        label {
-            margin-bottom: 8px;
-            color: #fff;
-            align-self: start;
-        }
-        input {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 9px;
-            background-color: #c5e4ff;
-            color: #008316;
-        }
-        input::placeholder {
-            color: #28b540;
-        }
-        input:active {
-            outline: none;
-        }
-        input:focus {
-            outline: none;
-        }
-        .name-container {
-            display: flex;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        .first-name-container, .last-name-container {
-            padding-right: 15px;
-        }
-        .email-container, .password-container {
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        button {
-            width: 200px;
-            padding: 10px;
-            background-color: #057918;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #037516;
-        }
-        p {
-            margin-top: 20px;
-            color: #fff;
-        }
-        a {
-            color: #0c761e;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
+                width: 600px;
+            }
+            h1 {
+                color: #fff;
+                margin-bottom: 25px;
+            }
+            form {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+            }
+            label {
+                margin-bottom: 8px;
+                color: #fff;
+                align-self: start;
+            }
+            input {
+                width: 100%;
+                padding: 15px;
+                border: none;
+                border-radius: 9px;
+                background-color: #c5e4ff;
+                color: #008316;
+            }
+            input::placeholder {
+                color: #28b540;
+            }
+            input:active {
+                outline: none;
+            }
+            input:focus {
+                outline: none;
+            }
+            .name-container {
+                display: flex;
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            .first-name-container,
+            .last-name-container {
+                padding-right: 15px;
+            }
+            .email-container,
+            .password-container {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            button {
+                width: 200px;
+                padding: 10px;
+                background-color: #057918;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+            button:hover {
+                background-color: #037516;
+            }
+            p {
+                margin-top: 20px;
+                color: #fff;
+            }
+            a {
+                color: #0c761e;
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+
     <body>
         <div class="card">
             <h1>Login Page</h1>
