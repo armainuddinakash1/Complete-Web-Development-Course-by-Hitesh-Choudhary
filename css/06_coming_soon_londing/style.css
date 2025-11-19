@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: "Poppins", sans-serif;
+    color: #333;
+    
+}
+
+.container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #f7efe6 0%, #ecd8c0 50%, #d8b88f 100%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+.content {
+    text-align: center;
+    max-height: 600px;
+    width: 600px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    padding: 40px;
+    margin: 20px;
+}
+.logo {
+    width: 250px;
+    margin-bottom: 20px;
+}
+h1 {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #d38c2e;
+}
+form {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+input[type="email"] {
+    padding: 12px 15px;
+    width: 80%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+input[type="email"]:focus {
+    border-color: #ff7f50;
+    outline: none;
+    box-shadow: 0 0 5px rgba(255, 127, 80, 0.5);
+}
+button {
+    padding: 12px 20px;
+    background-color: #d49645;
+    box-shadow: 0 6px 12px rgba(216, 184, 143, 0.25);
+    font-weight: 600;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+button:hover {
+    background-color: rgb(179, 115, 32);
+}
+@media (max-width: 500px) {
+    
+    .logo {
+        width: 150px;
+    }
+}
+
