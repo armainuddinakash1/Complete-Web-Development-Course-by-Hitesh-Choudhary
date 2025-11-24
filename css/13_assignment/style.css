@@ -1,0 +1,28 @@
+* {
+    margin: 0;
+    padding: 0;
+    block-size: border-box;
+}
+.carousel img {
+    width: 100vw;
+    height: 300px;
+}
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    min-height: 70vh;
+}
+.card {
+    margin: 20px;
+}
+.footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    max-width: 100vw;
+    height: 70px;
+    background-color: #c8c8c8;
+}
