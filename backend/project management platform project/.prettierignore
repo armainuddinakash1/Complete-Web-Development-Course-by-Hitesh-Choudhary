@@ -1,0 +1,9 @@
+# Build artifacts
+build/
+coverage/
+node_modules/
+
+# Environment files
+.env
+.env.*
+env/
