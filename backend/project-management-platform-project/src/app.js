@@ -20,7 +20,6 @@ app.use(
 );
 
 app.use("/api/v1/healthcheck", helthCheckRouter)
-// edit postman variable
 app.get("/", (req, res) => {
   res.send("welcome to basecamp");
 });
