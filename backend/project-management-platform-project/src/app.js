@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helthCheckRouter from "./routes/healthcheck.routes.js";
 
 const app = express();
 
@@ -14,10 +15,12 @@ app.use(
     origin: process.env.CORS_ORIGIN?.split(",") || "http://localhost:5173",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
+app.use("/api/v1/healthcheck", helthCheckRouter)
+// edit postman variable
 app.get("/", (req, res) => {
   res.send("welcome to basecamp");
 });
