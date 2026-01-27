@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import helthCheckRouter from "./routes/healthcheck.routes.js";
 
 const app = express();
 
@@ -19,7 +18,12 @@ app.use(
   }),
 );
 
-app.use("/api/v1/healthcheck", helthCheckRouter)
+// import the routers
+import helthCheckRouter from "./routes/healthcheck.routes.js";
+import authRouter from "./routes/auth.routes.js";
+
+app.use("/api/v1/healthcheck", helthCheckRouter);
+app.use("/api/v1/auth", authRouter);
 app.get("/", (req, res) => {
   res.send("welcome to basecamp");
 });
