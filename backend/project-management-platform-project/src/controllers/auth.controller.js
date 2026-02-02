@@ -2,8 +2,13 @@ import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import { emailVerificationMailgenContent, sendEmail } from "../utils/mail.js";
+import {
+  emailVerificationMailgenContent,
+  forgotPasswordMailgenContent,
+  sendEmail,
+} from "../utils/mail.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -51,7 +56,7 @@ const registerUser = asyncHandler(async (req, res) => {
     subject: "Please verify your email",
     mailgenContent: emailVerificationMailgenContent(
       user.username,
-      `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`,
+      `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${unHashedToken}`,
     ),
   });
 
@@ -186,10 +191,14 @@ const verifyEmail = asyncHandler(async (req, res) => {
 });
 
 const resendEmailVerification = asyncHandler(async (req, res) => {
-  const user = User.findById(req.user?._id);
+  if (!req.user || !req.user._id) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const user = await User.findById(req.user._id);
 
   if (!user) {
-    throw new ApiError(404, "User does not exists");
+    throw new ApiError(404, "User does not exist");
   }
 
   if (user.isEmailVerified) {
@@ -279,7 +288,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   }
 
   const { hashedToken, unHashedToken, tokenExpiry } =
-    user.generateAccessAndRefreshTokens(user._id);
+    user.generateTemporaryToken(user._id);
 
   user.forgotPasswordToken = hashedToken;
   user.forgotPasswordExpiry = tokenExpiry;
@@ -311,7 +320,7 @@ const resetForgotPassword = asyncHandler(async (req, res) => {
   const { newPassword } = req.body;
 
   const hashedToken = crypto
-    .createHasn("sha256")
+    .createHash("sha256")
     .update(resetToken)
     .digest("hex");
 
