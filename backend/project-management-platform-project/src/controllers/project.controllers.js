@@ -17,15 +17,15 @@ const getProjects = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "projects",
-        localField: "projects",
+        localField: "project",
         foreignField: "_id",
-        as: "projects",
+        as: "projectdata",
         pipeline: [
           {
             $lookup: {
-              from: "projectmambers",
+              from: "projectmembers",
               localField: "_id",
-              foreignField: "projects",
+              foreignField: "project",
               as: "projectmembers",
             },
           },
@@ -40,23 +40,30 @@ const getProjects = asyncHandler(async (req, res) => {
       },
     },
     {
-      $unwind: "$project",
-    },
-    {
       $project: {
-        project: {
+        projectdata: {
           _id: 1,
           name: 1,
           description: 1,
           members: 1,
           createdAt: 1,
           createdBy: 1,
+          // projectmembers: 1,
         },
+        // projectdata: 1,
         role: 1,
         _id: 0,
       },
     },
+
+    {
+      $unwind: "$projectdata",
+    },
   ]);
+
+  if (!projects) {
+    throw new ApiError(400, "Error Fetching Project");
+  }
 
   return res
     .status(200)
@@ -91,7 +98,9 @@ const createProject = asyncHandler(async (req, res) => {
     role: UserRolesEnum.ADMIN,
   });
 
-  res.status(201).json(201, project, "Project created successfully");
+  res
+    .status(201)
+    .json(new ApiResponse(201, project, "Project created successfully"));
 });
 
 const updateProject = asyncHandler(async (req, res) => {
@@ -115,6 +124,8 @@ const updateProject = asyncHandler(async (req, res) => {
 
 const deleteProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
+
+  await ProjectMember.deleteMany({ project: projectId });
   const project = await Project.findByIdAndDelete(projectId);
 
   if (!project) {
@@ -169,18 +180,18 @@ const addProjectMember = asyncHandler(async (req, res) => {
     );
 });
 
-const getProjectMember = asyncHandler(async (req, res) => {
+const getProjectMembers = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  const project = Project.getProjectById(projectId);
+  const project = await Project.findById(projectId);
 
   if (!project) {
     throw new ApiError(404, "Project not found");
   }
 
-  const projectMember = ProjectMember.aggregate([
+  const projectMember = await ProjectMember.aggregate([
     {
       $match: {
-        _id: new mongoose.Types.ObjectId(projectId),
+        project: new mongoose.Types.ObjectId(projectId),
       },
     },
     {
@@ -297,6 +308,7 @@ const deleteProjectMember = asyncHandler(async (req, res) => {
   }
 
   const project = await Project.findById(projectId);
+
   if (!project) {
     throw new ApiError(404, "Project Not Found");
   }
@@ -310,15 +322,52 @@ const deleteProjectMember = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User is not a member of this project");
   }
 
-  res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { deletedMember },
-        "Project member deleted successfully",
-      ),
-    );
+  const projectmembers = await Project.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(projectId),
+      },
+    },
+    {
+      $lookup: {
+        from: "projectmembers",
+        foreignField: "project",
+        localField: "_id",
+        as: "projectmembers",
+      },
+    },
+    {
+      $addFields: {
+        members: {
+          $size: "$projectmembers", // <---
+        },
+      },
+    },
+    {
+      $project: {
+        members: 1,
+        _id: 0
+      },
+    },
+  ]);
+
+  const members = projectmembers[0]?.members
+
+  if(members === 0) {
+    const deleteProject = await Project.findByIdAndDelete(projectId)
+
+    if (!deleteProject) {
+     throw new ApiError(400, "Error deleting project");
+   }
+  }
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      { deletedMember },
+      "Project member deleted successfully",
+    ),
+  );
 });
 
 export {
@@ -328,7 +377,7 @@ export {
   updateProject,
   deleteProject,
   addProjectMember,
-  getProjectMember,
+  getProjectMembers,
   updateProjectMember,
   deleteProjectMember,
 };

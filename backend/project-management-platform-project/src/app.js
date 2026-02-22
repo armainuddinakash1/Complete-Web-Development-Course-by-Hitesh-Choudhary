@@ -24,9 +24,12 @@ app.use(
 // import the routers
 import helthCheckRouter from "./routes/healthcheck.routes.js";
 import authRouter from "./routes/auth.routes.js";
+import projectRouter from "./routes/project.routes.js";
 
 app.use("/api/v1/healthcheck", helthCheckRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/projects", projectRouter);
+
 app.get("/", (req, res) => {
   res.send("welcome to basecamp");
 });
