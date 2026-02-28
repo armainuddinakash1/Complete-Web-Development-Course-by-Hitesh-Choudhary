@@ -3,7 +3,7 @@ import { AvailableTaskStatuses, TaskStatusEnum } from "../utils/constants.js";
 
 const taskSchema = new Schema(
   {
-    task: {
+    title: {
       type: String,
       required: true,
       trim: true,
