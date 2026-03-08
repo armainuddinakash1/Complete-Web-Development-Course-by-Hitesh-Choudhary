@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import healthCheckRouter from "./routes/healthcheck.routes.js";
 
 const app = express();
 
@@ -13,6 +14,9 @@ app.use(
 // common middleware
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-app.use(express.static("public"))
+app.use(express.static("public"));
+
+// routes
+app.use("/api/v1/healthcheck", healthCheckRouter);
 
 export { app };
