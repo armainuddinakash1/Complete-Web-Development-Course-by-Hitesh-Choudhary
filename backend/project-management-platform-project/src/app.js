@@ -21,7 +21,7 @@ app.use(
   }),
 );
 
-// import the routers
+// import routers
 import helthCheckRouter from "./routes/healthcheck.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import projectRouter from "./routes/project.routes.js";

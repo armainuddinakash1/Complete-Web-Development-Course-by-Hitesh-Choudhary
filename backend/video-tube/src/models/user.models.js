@@ -27,26 +27,13 @@ const userSchema = new Schema(
       index: true,
     },
     avatar: {
-      type: {
-        url: String, // cloudinary url
-        localPath: String,
-      },
-      default: {
-        url: `https://placehold.co/200`,
-        localPath: "",
-      },
+      type: String,
+      default: "https://placehold.co/200",
       required: true,
     },
     coverImage: {
-      type: {
-        url: String,
-        localPath: String,
-      },
-      default: {
-        url: `https://placehold.co/200`,
-        localPath: "",
-      },
-      default: true,
+      type: String,
+      default: "https://placehold.co/200",
     },
     watchHistory: [
       {
@@ -68,13 +55,8 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.modified("password")) {
-    next();
-  }
-
-  this.password = bcrypt.hash(this.password, 10);
-
-  next();
+  if (!this.isModified("password")) return;
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
 userSchema.methods.isPasswordCorrect = async function (password) {

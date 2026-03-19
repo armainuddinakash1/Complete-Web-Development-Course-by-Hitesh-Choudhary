@@ -7,10 +7,7 @@ cloudinary.config({
   // Return "https" URLs by setting secure: true
   secure: true,
 });
-
-// Log the configuration
-console.log(cloudinary.config());
-
+// 6:22
 const uploadOnCloudinary = async (localFilePath) => {
   try {
     if (!localFilePath) return null;
@@ -19,11 +16,22 @@ const uploadOnCloudinary = async (localFilePath) => {
     });
     await fs.promises.unlink(localFilePath);
     console.log("File uploaded on cloudinary. File src: " + response.url);
+    console.log(response);
     return response;
-  } catch {
+  } catch (error) {
+    console.log("Error on Cloudinary " + error);
     fs.unlinkSync(localFilePath);
     return null;
   }
 };
 
-export { uploadOnCloudinary };
+const deleteFromCloudinary = async (publicId) => {
+  try {
+    await cloudinary.uploader.destroy(publicId);
+    console.log("Deleted from cloudinary. Public ID: ", publicId);
+  } catch (error) {
+    console.log("Error deleting from cloudinary", error);
+  }
+};
+
+export { uploadOnCloudinary, deleteFromCloudinary };
