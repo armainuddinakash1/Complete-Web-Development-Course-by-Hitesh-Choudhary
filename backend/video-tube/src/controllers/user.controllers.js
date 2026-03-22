@@ -170,4 +170,90 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser, loginUser };
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const IncomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!IncomingRefreshToken) {
+    throw new ApiError(400, "Refresh token is required");
+  }
+
+  const decodedToken = await jwt.verify(
+    IncomingRefreshToken,
+    process.env.JWT_REFRESH_SECRET
+  );
+
+  const user = await User.findById(decodedToken?._id).select("-password");
+
+  if (!user) {
+    throw new ApiError(401, "Invalid refresh token - user not found");
+  }
+
+  if (user.refreshToken !== IncomingRefreshToken) {
+    throw new ApiError(401, "Invalid refresh token - token mismatch");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+    user._id
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user,
+          accessToken,
+          refreshToken,
+        },
+        "Access token refreshed successfully"
+      )
+    );
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+  // need to come here after middleware that verifies access token and sets req.user
+  const IncomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!IncomingRefreshToken) {
+    throw new ApiError(400, "Refresh token is required");
+  }
+
+  const decodedToken = await jwt.verify(
+    IncomingRefreshToken,
+    process.env.JWT_REFRESH_SECRET
+  );
+
+  const user = await User.findById(decodedToken?._id).select("-password");
+
+  if (!user) {
+    throw new ApiError(401, "Invalid refresh token - user not found");
+  }
+
+  if (user.refreshToken !== IncomingRefreshToken) {
+    throw new ApiError(401, "Invalid refresh token - token mismatch");
+  }
+  // const userId = req.user._id;
+  // const user = await User.findById(userId);
+  // if (!user) {
+  //   throw new ApiError(404, "User not found");
+  // }
+  user.refreshToken = null;
+  await user.save({ validateBeforeSave: false });
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "User logged out successfully"));
+});
+
+export { registerUser, loginUser, refreshAccessToken, logoutUser };
