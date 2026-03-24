@@ -7,6 +7,7 @@ import {
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import logger from "../utils/logger.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -20,7 +21,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError(500, "Failed to generate tokens" + error.message);
+    throw new ApiError(500, "Failed to generate tokens: " + error.message);
   }
 };
 
@@ -38,7 +39,6 @@ const registerUser = asyncHandler(async (req, res) => {
   if (existingUser) {
     throw new ApiError(409, "User with email or username already exists");
   }
-  console.log(req.files);
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
@@ -49,21 +49,25 @@ const registerUser = asyncHandler(async (req, res) => {
   let avatar;
   try {
     avatar = await uploadOnCloudinary(avatarLocalPath);
-    console.log("Avatar uploaded successfully", avatar);
   } catch (error) {
-    console.log("Error uploading avatar", error);
     throw new ApiError(500, "Failed to upload avatar");
   }
 
-  let coverImage;
+  let coverImage = undefined;
   if (coverImageLocalPath) {
     try {
       coverImage = await uploadOnCloudinary(coverImageLocalPath);
-      console.log("Cover image uploaded successfully", coverImage);
     } catch (error) {
       console.log("Error uploading cover image", error);
       throw new ApiError(500, "Failed to upload cover image");
     }
+  }
+
+  if (coverImage) {
+    coverImage = {
+      url: coverImage.url,
+      public_id: coverImage.public_id,
+    };
   }
 
   try {
@@ -71,8 +75,11 @@ const registerUser = asyncHandler(async (req, res) => {
       username,
       email,
       fullName,
-      avatar: avatar.url,
-      coverImage: coverImage?.url || "",
+      avatar: {
+        url: avatar.url,
+        public_id: avatar.public_id,
+      },
+      coverImage,
       password,
     });
 
@@ -164,10 +171,15 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Refresh token is required");
   }
 
-  const decodedToken = await jwt.verify(
-    IncomingRefreshToken,
-    process.env.JWT_REFRESH_SECRET
-  );
+  let decodedToken;
+  try {
+    decodedToken = jwt.verify(
+      IncomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+  } catch (error) {
+    throw new ApiError(401, "Invalid or expired refresh token");
+  }
 
   const user = await User.findById(decodedToken?._id).select("-password");
 
@@ -222,4 +234,160 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
-export { registerUser, loginUser, refreshAccessToken, logoutUser };
+const changePassword = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const { currentPassword, newPassword } = req.body;
+
+  const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid credentials");
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password updated successfully"));
+});
+
+// const getUser = asyncHandler(async (req, res) => {
+//   const userId = req.params.id;
+
+//   const user = await User.findById(userId).select("-password -refreshToken");
+
+//   if (!user) {
+//     throw new ApiError(404, "User not found");
+//   }
+
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, { user }, "User fetched successfully"));
+// });
+
+const getUser = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "User fetched successfully"));
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const { fullName, email } = req.body;
+
+  const payload = {};
+  if (fullName && fullName.trim()) payload.fullName = fullName.trim();
+  if (email && email.trim()) payload.email = email.trim();
+
+  if (Object.keys(payload).length === 0)
+    throw new ApiError(400, "At least one field is required");
+
+  const updatedUser = await User.findByIdAndUpdate(user._id, payload, {
+    new: true,
+    runValidators: true,
+  }).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { user: updatedUser }, "User details updated successfully")
+    );
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const avatarLocalPath = req.file?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+
+  try {
+    await deleteFromCloudinary(user.avatar.public_id);
+  } catch (error) {
+    console.log("Error deleting old avatar from Cloudinary:", error);
+    // Continue with upload even if deletion fails
+    logger.error(
+      `Failed to delete old avatar from Cloudinary for user ${user._id} (publicId: ${user.avatar.public_id}): `,
+      error
+    );
+  }
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!avatar) {
+    throw new ApiError(500, "Error uploading avatar");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { avatar: { url: avatar.url, public_id: avatar.public_id } },
+    { new: true, runValidators: true }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { user: updatedUser }, "Avatar updated successfully")
+    );
+});
+
+const updateCoverImage = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const coverImageLocalPath = req.file?.path;
+
+  if (!coverImageLocalPath) {
+    throw new ApiError(400, "Cover image file is required");
+  }
+
+  try {
+    await deleteFromCloudinary(user.coverImage.public_id);
+  } catch (error) {
+    console.log("Error deleting old cover image from Cloudinary:", error);
+    // Continue with upload even if deletion fails
+    logger.error(
+      `Failed to delete old cover image from Cloudinary for user ${user._id} (publicId: ${user.coverImage.public_id}): `,
+      error
+    );
+  }
+
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+  if (!coverImage) {
+    throw new ApiError(500, "Error uploading cover image");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { coverImage: { url: coverImage.url, public_id: coverImage.public_id } },
+    { new: true, runValidators: true }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { user: updatedUser },
+        "Cover image updated successfully"
+      )
+    );
+});
+
+export {
+  registerUser,
+  loginUser,
+  refreshAccessToken,
+  logoutUser,
+  changePassword,
+  getUser,
+  updateUser,
+  updateUserAvatar,
+  updateCoverImage,
+};

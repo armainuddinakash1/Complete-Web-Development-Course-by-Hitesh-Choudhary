@@ -2,6 +2,18 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import validator from "validator";
+
+const imageSchema = new mongoose.Schema({
+  url: {
+    type: String,
+    trim: true,
+  },
+  public_id: {
+    type: String,
+    trim: true,
+  },
+});
 
 const userSchema = new Schema(
   {
@@ -19,6 +31,11 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true,
+      validate: {
+        validator: validator.isEmail,
+        message: "Invalid email format",
+      },
     },
     fullName: {
       type: String,
@@ -27,13 +44,14 @@ const userSchema = new Schema(
       index: true,
     },
     avatar: {
-      type: String,
-      default: "https://placehold.co/200",
-      required: true,
+      type: imageSchema,
+      default: () => ({
+        url: "https://placehold.co/200",
+        public_id: "",
+      }),
     },
     coverImage: {
-      type: String,
-      default: "https://placehold.co/200",
+      type: imageSchema,
     },
     watchHistory: [
       {
@@ -55,8 +73,9 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return;
+  if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
 userSchema.methods.isPasswordCorrect = async function (password) {
