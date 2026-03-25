@@ -107,7 +107,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     throw new ApiError(
       500,
-      "Something went wrong while registering a user and deleted the images"
+      "Something went wrong while registering a user and deleted the images",
+      [error]
     );
   }
 });
@@ -164,17 +165,17 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const IncomingRefreshToken =
+  const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
 
-  if (!IncomingRefreshToken) {
+  if (!incomingRefreshToken) {
     throw new ApiError(400, "Refresh token is required");
   }
 
   let decodedToken;
   try {
     decodedToken = jwt.verify(
-      IncomingRefreshToken,
+      incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
   } catch (error) {
@@ -187,7 +188,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid refresh token - user not found");
   }
 
-  if (user.refreshToken !== IncomingRefreshToken) {
+  if (user.refreshToken !== incomingRefreshToken) {
     throw new ApiError(401, "Invalid refresh token - token mismatch");
   }
 
@@ -243,6 +244,10 @@ const changePassword = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid credentials");
   }
 
+  if (!newPassword || newPassword.trim() === "") {
+    throw new ApiError(400, "New password is required");
+  }
+
   user.password = newPassword;
   await user.save({ validateBeforeSave: false });
 
@@ -296,7 +301,11 @@ const updateUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, { user: updatedUser }, "User details updated successfully")
+      new ApiResponse(
+        200,
+        { user: updatedUser },
+        "User details updated successfully"
+      )
     );
 });
 
@@ -346,15 +355,16 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Cover image file is required");
   }
 
-  try {
-    await deleteFromCloudinary(user.coverImage.public_id);
-  } catch (error) {
-    console.log("Error deleting old cover image from Cloudinary:", error);
-    // Continue with upload even if deletion fails
-    logger.error(
-      `Failed to delete old cover image from Cloudinary for user ${user._id} (publicId: ${user.coverImage.public_id}): `,
-      error
-    );
+  if (user.coverImage?.public_id) {
+    try {
+      await deleteFromCloudinary(user.coverImage.public_id);
+    } catch (error) {
+      // Continue with upload even if deletion fails
+      logger.error(
+        `Failed to delete old cover image from Cloudinary for user ${user._id} (publicId: ${user.coverImage.public_id}): `,
+        error
+      );
+    }
   }
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
@@ -380,6 +390,127 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     );
 });
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  if (!username?.trim()) {
+    throw new ApiError(400, "Username is required");
+  }
+  const channel = await User.aggregate([
+    { $match: { username: username.trim().toLowerCase() } },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscriptions",
+      },
+    },
+    {
+      $addFields: {
+        subscriberCount: { $size: "$subscribers" },
+        subscriptionCount: { $size: "$subscriptions" },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        email: 1,
+        username: 1,
+        fullName: 1,
+        avatar: 1,
+        coverImage: 1,
+        subscriberCount: 1,
+        subscriptionCount: 1,
+        isSubscribed: 1,
+      },
+    },
+  ]);
+
+  if (!channel?.length) {
+    throw new ApiError(404, "Channel not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { channel: channel[0] },
+        "Channel profile fetched successfully"
+      )
+    );
+});
+
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    { $match: { _id: req.user._id } },
+    { $unwind: "$watchHistory" },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "videoDetails",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "ownerDetails",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    fullName: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      $project: {
+        video: 1,
+        videoDetails: 1,
+      },
+    },
+    {
+      $addFields: {
+        owner: { $arrayElemAt: ["$videoDetails.ownerDetails", 0] },
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { watchHistory: user || [] },
+        "Watch history fetched successfully"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -390,4 +521,6 @@ export {
   updateUser,
   updateUserAvatar,
   updateCoverImage,
+  getWatchHistory,
+  getUserChannelProfile,
 };
