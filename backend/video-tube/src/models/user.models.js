@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import validator from "validator";
+import { ApiError } from "../utils/api-error.js";
 
 const imageSchema = new mongoose.Schema({
   url: {
@@ -72,13 +73,15 @@ const userSchema = new Schema(
   }
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 userSchema.methods.isPasswordCorrect = async function (password) {
+  if (!password) throw new ApiError(400, "Password argument is required");
+  if (!this.password)
+    throw new ApiError(500, "Password hash is missing on this user document");
   return await bcrypt.compare(password, this.password);
 };
 

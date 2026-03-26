@@ -34,7 +34,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const existingUser = await User.findOne({
-    $or: [{ email }, { username }],
+    $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }],
   });
   if (existingUser) {
     throw new ApiError(409, "User with email or username already exists");
@@ -58,7 +58,6 @@ const registerUser = asyncHandler(async (req, res) => {
     try {
       coverImage = await uploadOnCloudinary(coverImageLocalPath);
     } catch (error) {
-      console.log("Error uploading cover image", error);
       throw new ApiError(500, "Failed to upload cover image");
     }
   }
@@ -95,8 +94,6 @@ const registerUser = asyncHandler(async (req, res) => {
       .status(201)
       .json(new ApiResponse(201, createdUser, "User registered successfully"));
   } catch (error) {
-    console.log("Failed to create user");
-
     if (avatar) {
       await deleteFromCloudinary(avatar.public_id);
     }
@@ -236,9 +233,11 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const changePassword = asyncHandler(async (req, res) => {
-  const user = req.user;
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
   const { currentPassword, newPassword } = req.body;
-
   const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
   if (!isPasswordCorrect) {
     throw new ApiError(400, "Invalid credentials");
@@ -313,32 +312,28 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   const user = req.user;
   const avatarLocalPath = req.file?.path;
 
-  if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar file is required");
-  }
-
-  try {
-    await deleteFromCloudinary(user.avatar.public_id);
-  } catch (error) {
-    console.log("Error deleting old avatar from Cloudinary:", error);
-    // Continue with upload even if deletion fails
-    logger.error(
-      `Failed to delete old avatar from Cloudinary for user ${user._id} (publicId: ${user.avatar.public_id}): `,
-      error
-    );
-  }
-
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-
-  if (!avatar) {
-    throw new ApiError(500, "Error uploading avatar");
-  }
 
   const updatedUser = await User.findByIdAndUpdate(
     user._id,
     { avatar: { url: avatar.url, public_id: avatar.public_id } },
     { new: true, runValidators: true }
   ).select("-password -refreshToken");
+
+  if (!updatedUser) {
+    await deleteFromCloudinary(updatedUser.avatar.public_id);
+    throw new ApiError(500, "Error updating user avatar on database");
+  }
+
+  try {
+    await deleteFromCloudinary(user.avatar.public_id);
+  } catch (error) {
+    // Continue even if deletion fails
+    logger.error(
+      `Failed to delete old avatar from Cloudinary for user ${user._id} (publicId: ${user.avatar.public_id}): `,
+      error
+    );
+  }
 
   return res
     .status(200)
@@ -351,11 +346,20 @@ const updateCoverImage = asyncHandler(async (req, res) => {
   const user = req.user;
   const coverImageLocalPath = req.file?.path;
 
-  if (!coverImageLocalPath) {
-    throw new ApiError(400, "Cover image file is required");
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { coverImage: { url: coverImage.url, public_id: coverImage.public_id } },
+    { new: true, runValidators: true }
+  ).select("-password -refreshToken");
+
+  if (!updatedUser) {
+    await deleteFromCloudinary(coverImage.public_id);
+    throw new ApiError(500, "Error updating cover image on database");
   }
 
-  if (user.coverImage?.public_id) {
+  if (user.coverImage) {
     try {
       await deleteFromCloudinary(user.coverImage.public_id);
     } catch (error) {
@@ -366,18 +370,6 @@ const updateCoverImage = asyncHandler(async (req, res) => {
       );
     }
   }
-
-  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
-
-  if (!coverImage) {
-    throw new ApiError(500, "Error uploading cover image");
-  }
-
-  const updatedUser = await User.findByIdAndUpdate(
-    user._id,
-    { coverImage: { url: coverImage.url, public_id: coverImage.public_id } },
-    { new: true, runValidators: true }
-  ).select("-password -refreshToken");
 
   return res
     .status(200)
