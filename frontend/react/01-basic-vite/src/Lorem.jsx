@@ -1,0 +1,7 @@
+function Lorem() {
+    return (
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
+    )
+}
+
+export default Lorem;
