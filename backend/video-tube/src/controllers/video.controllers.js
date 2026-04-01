@@ -1,10 +1,13 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.models.js";
 import { User } from "../models/user.models.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { ApiError } from "../utils/api-error.js";
+import { ApiResponse } from "../utils/api-response.js";
+import { asyncHandler } from "../utils/async-handler.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
@@ -57,12 +60,12 @@ const publishAVideo = asyncHandler(async (req, res) => {
     description = undefined;
   }
   // get video, upload to cloudinary, create video
-  const videoPath = req.files?.video?.[0]?.path;
+  const videoPath = req.files?.videoFile?.[0]?.path;
   if (!videoPath) {
     throw new ApiError(400, "Video file is required");
   }
 
-  if (!req.files?.video[0]?.originalname.match(/\.(mp4|mov|avi|mkv)$/)) {
+  if (!req.files?.videoFile[0]?.originalname.match(/\.(mp4|mov|avi|mkv)$/)) {
     throw new ApiError(
       400,
       "Invalid video file format. Allowed formats: mp4, mov, avi, mkv"
@@ -80,7 +83,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
       );
     }
     thumbnail = await uploadOnCloudinary(thumbnailPath, "image");
-    thumbnail = { url: thumbnail.secure_url, public_id: thumbnail.public_id };
   }
   const video = await Video.create({
     owner: req.user._id,
@@ -90,6 +92,16 @@ const publishAVideo = asyncHandler(async (req, res) => {
     thumbnail: thumbnail,
     duration: videoFile.duration,
   });
+  if (!video) {
+    // delete uploaded files from cloudinary if video document creation fails
+    if (videoFile.public_id) {
+      await deleteFromCloudinary(videoFile.public_id, "video");
+    }
+    if (thumbnail?.public_id) {
+      await deleteFromCloudinary(thumbnail.public_id, "image");
+    }
+    throw new ApiError(500, "Failed to publish video");
+  }
   return res
     .status(201)
     .json(new ApiResponse(201, video, "Video published successfully"));
@@ -134,6 +146,7 @@ const updateVideo = asyncHandler(async (req, res) => {
       );
     }
     const thumbnail = await uploadOnCloudinary(req.file.path, "image");
+    await deleteFromCloudinary(video.thumbnail.public_id, "image");
     video.thumbnail = {
       url: thumbnail.secure_url,
       public_id: thumbnail.public_id,
@@ -150,7 +163,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid video ID");
   }
-  const video = await Video.findByIdAndDelete(videoId);
+  const video = await Video.findById(videoId);
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
@@ -158,11 +171,18 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to perform this action");
   }
 
-  // delete video
+  if (!video.videoFile?.public_id) {
+    throw new ApiError(400, "Video file public_id is missing");
+  }
+  
+  // Delete from Cloudinary FIRST, before removing from DB
   await deleteFromCloudinary(video.videoFile.public_id, "video");
+
   if (video.thumbnail?.public_id) {
     await deleteFromCloudinary(video.thumbnail.public_id, "image");
   }
+
+  await video.deleteOne();
 
   return res
     .status(200)

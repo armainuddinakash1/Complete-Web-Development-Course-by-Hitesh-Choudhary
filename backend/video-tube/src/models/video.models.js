@@ -1,4 +1,18 @@
+
 import mongoose, { Schema } from "mongoose";
+
+const mediaSchema = new mongoose.Schema({
+  url: {
+    type: String,
+    trim: true,
+    require: true
+  },
+  public_id: {
+    type: String,
+    trim: true,
+  },
+});
+
 
 const videoSchema = new Schema(
   {
@@ -8,12 +22,10 @@ const videoSchema = new Schema(
       required: true,
     },
     videoFile: {
-      type: string,
-      required: true,
+      type: mediaSchema,
     },
     thumbnail: {
-      type: String,
-      required: true,
+      type: mediaSchema,
     },
     title: {
       type: String,
@@ -28,12 +40,12 @@ const videoSchema = new Schema(
     },
     views: {
       type: Number,
-      default: 0
+      default: 0,
     },
     isPublished: {
       type: Boolean,
       default: true,
-    }
+    },
   },
   {
     timestamps: true,

@@ -25,12 +25,10 @@ const likeSchema = new Schema(
   }
 );
 
-likeSchema.pre("validate", function (next) {
+likeSchema.pre("validate", function () {
   const fields = [this.video, this.comment, this.tweet].filter(Boolean);
   if (fields.length !== 1) {
-    next(new Error("A like must reference exactly one of: video, comment, or tweet."));
-  } else {
-    next();
+    throw new Error("A like must reference exactly one of: video, comment, or tweet.");
   }
 });
 
