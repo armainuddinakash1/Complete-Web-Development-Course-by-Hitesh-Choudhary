@@ -4,12 +4,12 @@ export function proxy(request: NextRequest) {
     const path = request.nextUrl.pathname;
 
     const isPublicPath =
-        path === "/login" || path === "/signup";
+        path === "/login" || path === "/signup" || path === "/verifyemail";
 
     const token = request.cookies.get("Auth")?.value || "";
 
     if (isPublicPath && token) {
-        return NextResponse.redirect(new URL("/", request.nextUrl));
+        return NextResponse.redirect(new URL("/profile", request.nextUrl));
     }
 
     if (!isPublicPath && !token) {
@@ -18,5 +18,12 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/", "/profile", "/profile/:path*", "/login", "/signup"],
+    matcher: [
+        "/",
+        "/profile",
+        "/profile/:path*",
+        "/login",
+        "/signup",
+        "/verifyemail",
+    ],
 };

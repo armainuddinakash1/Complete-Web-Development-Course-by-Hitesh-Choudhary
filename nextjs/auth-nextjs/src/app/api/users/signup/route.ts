@@ -3,6 +3,7 @@ import User from "@/models/userModel";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { sendEmail } from "@/helpers/mailer";
 
 export async function POST(request: NextRequest) {
     try {
@@ -51,6 +52,9 @@ export async function POST(request: NextRequest) {
             });
             response.cookies.set("Auth", token, { httpOnly: true });
         }
+        // send verification email
+        await sendEmail({ email, emailType: "VERIFY", userId: savedUser._id });
+
         return response;
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
