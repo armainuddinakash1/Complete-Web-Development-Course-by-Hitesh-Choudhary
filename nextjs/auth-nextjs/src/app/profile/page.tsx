@@ -37,31 +37,51 @@ function Profile() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen py-2">
-            <h1 className="text-3xl mb-4">Profile</h1>
-            <h2 className="text-xl">
-                {userId === "nothing" ? (
-                    "Nothing"
-                ) : (
-                    <Link
-                        href={`/profile/${userId}`}
-                    >{`User ID: ${userId}`}</Link>
-                )}
-            </h2>
-            {/* Fix the bug on get user details click */}
-            <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4"
-                onClick={logout}
-            >
-                Logout
-            </button>
-            <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4"
-                onClick={getUserDetails}
-            >
-                Get User Details
-            </button>
-        </div>
+        <main className="flex min-h-screen items-center justify-center bg-white px-4 py-8">
+            <section className="w-full max-w-2xl rounded-4xl border border-black/10 bg-white p-10 shadow-[0_35px_60px_-25px_rgba(0,0,0,0.2)]">
+                <div className="text-center">
+                    <p className="text-sm uppercase tracking-[0.35em] text-black/60">
+                        Account profile
+                    </p>
+                    <h1 className="mt-4 text-3xl font-black text-black">
+                        Profile
+                    </h1>
+                </div>
+
+                <div className="mt-8 rounded-3xl border border-black/10 bg-black/5 p-6">
+                    <h2 className="text-lg font-semibold text-black">
+                        Current status
+                    </h2>
+                    <p className="mt-3 text-sm leading-7 text-black/80">
+                        {userId === "nothing" ? (
+                            "No user details loaded yet. Click below to fetch current session info."
+                        ) : (
+                            <Link
+                                href={`/profile/${userId}`}
+                                className="font-semibold underline"
+                            >
+                                {`User ID: ${userId}`}
+                            </Link>
+                        )}
+                    </p>
+                </div>
+
+                <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
+                    <button
+                        className="inline-flex w-full items-center justify-center rounded-full border border-black bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-black/90 sm:w-auto"
+                        onClick={logout}
+                    >
+                        Logout
+                    </button>
+                    <button
+                        className="inline-flex w-full items-center justify-center rounded-full border border-black bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-black/5 sm:w-auto"
+                        onClick={getUserDetails}
+                    >
+                        Get User Details
+                    </button>
+                </div>
+            </section>
+        </main>
     );
 }
 

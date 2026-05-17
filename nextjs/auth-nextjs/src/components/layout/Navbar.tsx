@@ -80,7 +80,7 @@ function Navbar() {
                             </Link>
                             <Link
                                 href="/signup"
-                                className="text-sm font-semibold text-white bg-black rounded-full px-5 py-2 hover:bg-black/75 transition-colors duration-200"
+                                className="text-sm font-semibold  text-[white]! bg-black rounded-full px-5 py-2 hover:bg-black/75 transition-colors duration-200"
                             >
                                 Sign up
                             </Link>

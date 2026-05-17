@@ -4,7 +4,7 @@ export function proxy(request: NextRequest) {
     const path = request.nextUrl.pathname;
 
     const isPublicPath =
-        path === "/login" || path === "/signup" || path === "/verifyemail";
+        path === "/login" || path === "/signup";
 
     const token = request.cookies.get("Auth")?.value || "";
 
