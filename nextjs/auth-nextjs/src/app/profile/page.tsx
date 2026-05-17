@@ -21,12 +21,18 @@ function Profile() {
 
     const getUserDetails = async () => {
         try {
-            const res = await axios.get("/api/users/me", { withCredentials: true });
+            const res = await axios.get("/api/users/me", {
+                withCredentials: true,
+            });
             const userId = res.data.user._id;
             setUserId(userId);
         } catch (error: any) {
             console.error(error);
-            toast.error(error.response?.data?.error || error.message || "Failed to fetch user details");
+            toast.error(
+                error.response?.data?.error ||
+                    error.message ||
+                    "Failed to fetch user details",
+            );
         }
     };
 
@@ -37,7 +43,9 @@ function Profile() {
                 {userId === "nothing" ? (
                     "Nothing"
                 ) : (
-                        <Link href={`/profile/${userId}`}>{`User ID: ${userId}`}</Link>
+                    <Link
+                        href={`/profile/${userId}`}
+                    >{`User ID: ${userId}`}</Link>
                 )}
             </h2>
             {/* Fix the bug on get user details click */}

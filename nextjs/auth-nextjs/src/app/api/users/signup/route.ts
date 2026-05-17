@@ -45,6 +45,10 @@ export async function POST(request: NextRequest) {
         const response = NextResponse.json({
             message: "User created successfully",
             success: true,
+            user: {
+                username: savedUser.username,
+                email: savedUser.email,
+            },
         });
         if (tokenSecret) {
             const token = jwt.sign(tokenData, tokenSecret, {

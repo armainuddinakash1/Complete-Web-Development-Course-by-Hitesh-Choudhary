@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
+connect();
+
 export async function POST(request: NextRequest) {
     try {
         const reqBody = await request.json();
@@ -14,7 +16,7 @@ export async function POST(request: NextRequest) {
 
         if (!user) {
             return NextResponse.json(
-                { error: "user does not exist" },
+                { error: "User does not exist" },
                 { status: 400 },
             );
         }
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
             return NextResponse.json(
-                { error: "invalid credentials" },
+                { error: "Invalid credentials" },
                 { status: 400 },
             );
         }
@@ -47,6 +49,10 @@ export async function POST(request: NextRequest) {
         const response = NextResponse.json({
             message: "User fetched successfully",
             success: true,
+            user: {
+                username: user.username,
+                email: user.email
+            }
         });
 
         response.cookies.set("Auth", token, { httpOnly: true });
@@ -57,4 +63,4 @@ export async function POST(request: NextRequest) {
     }
 }
 
-connect();
+

@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 function Signup() {
     const router = useRouter();
+    const { login } = useAuth();
     const [user, setUser] = useState({
         username: "",
         email: "",
@@ -20,10 +22,16 @@ function Signup() {
             setLoading(true);
             const response = await axios.post("/api/users/signup", user);
             toast("User created successfully");
+            login(response.data.user);
             router.push("/");
         } catch (err: any) {
             toast(err.message);
         } finally {
+            setUser({
+                username: "",
+                email: "",
+                password: "",
+            });
             setLoading(false);
         }
     };
